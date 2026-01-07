@@ -1,0 +1,35 @@
+{
+  "protocol": "cdp",
+  "headless": "shell",
+  "debug": false,
+  "findBrowser": true,
+  "slowMo": 0,
+  "maxOpenPages": 10,
+  "pageMode": "reuse",
+  "pageIdleTimeout": 60000,
+  "defaultViewport": {
+    "width": 800,
+    "height": 600
+  },
+  "download": {
+    "enable": true,
+    "browser": "chrome-headless-shell",
+    "version": "latest"
+  },
+  "args": [
+    "--window-size=800,600",
+    "--disable-gpu",
+    "--no-sandbox",
+    "--disable-setuid-sandbox",
+    "--no-zygote",
+    "--disable-extensions",
+    "--disable-dev-shm-usage",
+    "--disable-background-networking",
+    "--disable-sync",
+    "--disable-crash-reporter",
+    "--disable-translate",
+    "--disable-notifications",
+    "--disable-device-discovery-notifications",
+    "--disable-accelerated-2d-canvas"
+  ]
+}
