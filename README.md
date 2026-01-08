@@ -4,10 +4,29 @@
 
 ## 快速开始
 ```bash
-cd karin-plugin-mcp
-pnpm i
-pnpm dev
+pnpm add karin-plugin-mcp -w  
+```  
+
+使用 #mcp导出配置 命令 ，获取填入IDE的json配置 e.g:  
+ ```json
+{
+  "mcpServers": {
+    "karin-mcp": {
+      "command": "node",
+      "args": [
+        "G:\\BotDev\\karin\\karin-plugin-mcp\\lib\\mcp-server.js",        
+        "--karin-url",
+        "http://127.0.0.1:7777/MCP",
+        "--log-level",
+        "error",
+        "--no-config-read"
+      ]
+    }
+  }
+}
 ```
+![alt text](docs\imgs\cc_swtich演示.png)
+
 
 默认 HTTP Bridge 挂载路径：`/MCP`
 
