@@ -1,16 +1,16 @@
 {
   "name": "karin-plugin-mcp",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "author": "429",
   "type": "module",
   "description": "Karin MCP bridge plugin (stdio MCP server + /MCP HTTP bridge)",
-  "homepage": "https://github.com/KarinJS/karin",
+  "homepage": "https://github.com/XuF163/karin-plugin-mcp",
   "bugs": {
-    "url": "https://github.com/KarinJS/karin/issues"
+    "url": "https://github.com/XuF163/karin-plugin-mcp/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/KarinJS/karin.git"
+    "url": "git+https://github.com/XuF163/karin-plugin-mcp.git"
   },
   "scripts": {
     "app": "node lib/app.js",
