@@ -1,7 +1,7 @@
 {
   "name": "karin-plugin-mcp",
-  "version": "1.0.0",
-  "author": "shijin",
+  "version": "0.0.1",
+  "author": "429",
   "type": "module",
   "description": "Karin MCP bridge plugin (stdio MCP server + /MCP HTTP bridge)",
   "homepage": "https://github.com/KarinJS/karin",
@@ -33,12 +33,14 @@
   },
   "karin": {
     "main": "src/index.ts",
+    "web": "lib/web.config.js",
     "apps": [
       "lib/apps"
     ],
     "ts-apps": [
       "src/apps"
     ],
+    "ts-web": "src/web.config.ts",
     "static": [
       "resources"
     ],

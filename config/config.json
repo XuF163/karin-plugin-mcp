@@ -1,4 +1,35 @@
 {
   "mcpPath": "/MCP",
-  "apiKey": ""
+  "command": {
+    "view": "master",
+    "allowUserIds": [],
+    "allowGroupIds": []
+  },
+  "mcpTools": {
+    "configRead": false
+  },
+  "runtime": {
+    "maxHistory": 200,
+    "traceTtlMs": 300000
+  },
+  "artifacts": {
+    "maxCount": 200,
+    "maxAgeMs": 604800000
+  },
+  "limits": {
+    "enabled": true,
+    "perUser": {
+      "maxConcurrent": 2,
+      "rps": 2,
+      "burst": 4
+    },
+    "perGroup": {
+      "maxConcurrent": 4,
+      "rps": 4,
+      "burst": 8
+    }
+  },
+  "security": {
+    "ipAllowlist": []
+  }
 }

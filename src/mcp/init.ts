@@ -1,5 +1,3 @@
-import type { Router } from 'express'
-
 import express from 'node-karin/express'
 import { app, logger } from 'node-karin'
 
@@ -9,21 +7,21 @@ import { createMcpImpl, type McpImpl } from './impl'
 const GLOBAL_KEY = '__KARIN_PLUGIN_MCP__'
 
 type GlobalContainer = {
-  mounted: boolean
-  router: Router | null
+  mountedPaths: Set<string>
+  activePath: string
   impl: McpImpl | null
 }
 
 const ensureContainer = (): GlobalContainer => {
   const globalAny = globalThis as any
   if (!globalAny[GLOBAL_KEY]) {
-    globalAny[GLOBAL_KEY] = { mounted: false, router: null, impl: null } satisfies GlobalContainer
+    globalAny[GLOBAL_KEY] = { mountedPaths: new Set<string>(), activePath: '/MCP', impl: null } satisfies GlobalContainer
   }
   return globalAny[GLOBAL_KEY] as GlobalContainer
 }
 
-const mountRoutesOnce = (container: GlobalContainer, mcpPath: string) => {
-  if (container.mounted) return
+const mountRoutesOnce = (container: GlobalContainer, mountPath: string) => {
+  if (container.mountedPaths.has(mountPath)) return
 
   const router = express.Router()
 
@@ -36,19 +34,39 @@ const mountRoutesOnce = (container: GlobalContainer, mcpPath: string) => {
     next()
   })
 
+  router.use((req, res, next) => {
+    // Hard-disable old routes after `mcpPath` changes to avoid:
+    // - two active entrypoints (confusing for humans/clients)
+    // - accidentally keeping an unprotected old path alive
+    if (container.activePath !== mountPath) {
+      return res.status(410).json({
+        success: false,
+        error: `MCP path changed: ${mountPath} -> ${container.activePath}`,
+        activePath: container.activePath,
+      })
+    }
+    next()
+  })
+
   router.get('/health', (req, res) => container.impl?.handleHealth(req as any, res as any))
   router.get('/files/:filename', (req, res) => container.impl?.handleFile(req as any, res as any))
   router.all('/api/:action', (req, res) => container.impl?.handleApi(req as any, res as any))
 
-  app.use(mcpPath, router)
+  app.use(mountPath, router)
 
-  container.router = router
-  container.mounted = true
-  logger.mark(`[${dir.name}] mounted: ${mcpPath}`)
+  container.mountedPaths.add(mountPath)
+  logger.mark(`[${dir.name}] mounted: ${mountPath}`)
 }
 
 export const initMcpPlugin = async (options?: { mcpPath?: string }) => {
   const container = ensureContainer()
+
+  const mcpPath = options?.mcpPath ?? '/MCP'
+  if (container.activePath !== mcpPath) {
+    logger.warn(`[${dir.name}] mcpPath changed: ${container.activePath} -> ${mcpPath} (old path will be disabled)`)
+  }
+  container.activePath = mcpPath
+
   if (container.impl?.dispose) {
     try {
       await container.impl.dispose()
@@ -57,7 +75,10 @@ export const initMcpPlugin = async (options?: { mcpPath?: string }) => {
     }
   }
 
-  const mcpPath = options?.mcpPath ?? '/MCP'
-  container.impl = createMcpImpl({ mcpPath, pluginName: dir.name })
+  container.impl = createMcpImpl({
+    mcpPath,
+    pluginName: dir.name,
+    reloadPlugin: async (next) => initMcpPlugin({ mcpPath: next.mcpPath }),
+  })
   mountRoutesOnce(container, mcpPath)
 }

@@ -2,8 +2,6 @@ import type { AsyncLocalStorage } from 'node:async_hooks'
 
 import { AdapterBase, createRawMessage } from 'node-karin'
 
-const MAX_HISTORY = 200
-
 export interface McpTraceStore {
   traceId: string
 }
@@ -19,6 +17,7 @@ export interface McpAdapterRuntime {
   traces: Map<string, TraceEntry>
   inbox: unknown[]
   outbox: unknown[]
+  maxHistory: number
 }
 
 export class McpAdapter extends AdapterBase {
@@ -68,7 +67,7 @@ export class McpAdapter extends AdapterBase {
     }
 
     this.impl.outbox.unshift(record)
-    if (this.impl.outbox.length > MAX_HISTORY) this.impl.outbox.length = MAX_HISTORY
+    if (this.impl.outbox.length > this.impl.maxHistory) this.impl.outbox.length = this.impl.maxHistory
 
     if (traceId && this.impl.traces.has(traceId)) {
       this.impl.traces.get(traceId)!.responses.push(record)
@@ -100,7 +99,7 @@ export class McpAdapter extends AdapterBase {
     }
 
     this.impl.outbox.unshift(record)
-    if (this.impl.outbox.length > MAX_HISTORY) this.impl.outbox.length = MAX_HISTORY
+    if (this.impl.outbox.length > this.impl.maxHistory) this.impl.outbox.length = this.impl.maxHistory
 
     if (traceId && this.impl.traces.has(traceId)) {
       this.impl.traces.get(traceId)!.responses.push(record)

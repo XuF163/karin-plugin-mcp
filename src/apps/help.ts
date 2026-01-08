@@ -5,7 +5,7 @@ import { karin, logger, render, segment } from 'node-karin'
 import { dir } from '@/dir'
 import { getLocalBaseUrl } from '@/mcp/baseUrl'
 import { toStr } from '@/mcp/utils'
-import { getEffectiveApiKey, getEffectiveMcpPath } from '@/utils/config'
+import { getEffectiveMcpPath, getMcpPluginConfig } from '@/utils/config'
 import { ensurePluginResources } from '@/utils/resources'
 
 const formatDateTime = (date: Date) => {
@@ -23,44 +23,64 @@ const formatDateTime = (date: Date) => {
   }
 }
 
-const maskSecret = (value: string): string => {
-  const s = toStr(value).trim()
-  if (!s) return ''
-  if (s.length <= 4) return '*'.repeat(s.length)
-  if (s.length <= 8) return `${s.slice(0, 1)}***${s.slice(-1)}`
-  return `${s.slice(0, 2)}***${s.slice(-2)}`
+const getEventUserId = (e: any): string => {
+  return toStr(e?.userId || e?.user_id || e?.sender?.userId || e?.sender?.user_id || e?.sender?.id || e?.user?.id).trim()
+}
+
+const getEventGroupId = (e: any): string => {
+  return toStr(e?.groupId || e?.group_id || e?.group?.id || e?.group?.group_id || e?.contact?.id || e?.contact?.groupId || e?.contact?.group_id).trim()
+}
+
+const hasViewPermission = (e: any): boolean => {
+  const cfg = getMcpPluginConfig()
+  const level = cfg.command.view
+
+  const isMaster = Boolean(e?.isMaster)
+  const isAdmin = Boolean(e?.isAdmin)
+
+  if (level === 'all') return true
+  if (isMaster) return true
+  if (level === 'master') return false
+  if (level === 'admin') return isAdmin
+
+  // whitelist
+  if (isAdmin) return true
+  const userId = getEventUserId(e)
+  const groupId = getEventGroupId(e)
+  if (userId && cfg.command.allowUserIds.includes(userId)) return true
+  if (groupId && cfg.command.allowGroupIds.includes(groupId)) return true
+  return false
 }
 
 const buildTextHelp = (options: {
   mcpUrl: string
-  apiKey: string
   configPath: string
   mcpServerPath: string
 }) => {
-  const apiKeyMasked = options.apiKey ? maskSecret(options.apiKey) : ''
   return [
     `【${dir.name} v${dir.version}】`,
-    '用途：让 LLM/IDE 通过 MCP(stdio) 调用 Karin（mcp-server → HTTP Bridge → Bot Adapter）',
+    '用途：让 LLM/IDE 通过 MCP(stdio) 调用 Karin（mcp-server -> HTTP Bridge -> Bot Adapter）。',
     '',
-    '指令：',
-    '- #mcp 帮助：查看本帮助',
+    '命令（只读）：',
+    '- #mcp 帮助',
+    '- #mcp 配置（修改配置请前往 Web UI）',
+    '- #mcp 状态',
+    '- #mcp 导出配置（返回 MCP Host 配置 JSON）',
     '',
     'HTTP Bridge：',
     `- 地址：${options.mcpUrl}`,
     `- 健康检查：GET ${options.mcpUrl}/health`,
     `- 渲染产物：GET ${options.mcpUrl}/files/:filename`,
-    `- Actions：POST ${options.mcpUrl}/api/bot.status | mock.incoming.message | mock.status | mock.history | render.screenshot`,
+    `- Actions：POST ${options.mcpUrl}/api/bot.status | mock.incoming.message | mock.status | mock.history | render.screenshot | meta.actions | config.get（需开启） | test.scenarios.list | test.scenario.run | test.scenarios.runAll | test.records.list | test.records.tail | test.trace.get`,
     '',
-    '鉴权：',
-    `- 当前：${options.apiKey ? `已启用（${apiKeyMasked}）` : '未启用（无需鉴权）'}`,
-    `- 配置文件：${options.configPath}（mcpPath/apiKey）`,
-    '- 设置优先级：环境变量 KARIN_MCP_API_KEY（优先）或 HTTP_AUTH_KEY > 配置文件 apiKey',
-    '- 传递：X-API-Key / Authorization: Bearer <key> / ?apiKey=<key> / body.apiKey',
+    '安全：',
+    '- 默认无 Key 鉴权（仅建议本机/内网使用）。',
+    '- 如需限制访问，请在 Web UI 配置 security.ipAllowlist（IP/CIDR 白名单）。',
+    `- 配置文件：${options.configPath}`,
     '',
-    'MCP Server（给 IDE/客户端配置）：',
+    'MCP Server（给 IDE/MCP Host 配置）：',
     `- 启动文件：${options.mcpServerPath}`,
-    `- 推荐 env：KARIN_MCP_URL=${options.mcpUrl}`,
-    '- 或：KARIN_BASE_URL + KARIN_MCP_PATH；可选 KARIN_MCP_API_KEY',
+    `- 推荐 args：--karin-url ${options.mcpUrl} --log-level error`,
     '',
     '更多说明：docs/API.md',
   ].join('\n')
@@ -71,13 +91,15 @@ export const mcpHelp = karin.command(/^#?mcp(?:\s*(?:帮助|help))?$/i, async (e
   const mcpPath = getEffectiveMcpPath()
   const mcpUrl = `${baseUrl}${mcpPath}`
 
-  const apiKey = getEffectiveApiKey()
-  const apiKeyStatus = apiKey ? '已启用' : '未启用（无需鉴权）'
-  const apiKeyMasked = apiKey ? maskSecret(apiKey) : '-'
   const configPath = path.join(dir.ConfigDir, 'config.json')
   const mcpServerPath = path.join(dir.pluginDir, 'lib', 'mcp-server.js')
 
   try {
+    if (!hasViewPermission(e)) {
+      await e.reply('权限不足：请在 Web UI 配置 command.view / allowlist 后重试。')
+      return true
+    }
+
     await ensurePluginResources()
     const html = path.join(dir.defResourcesDir, 'template', 'mcp-help.html')
 
@@ -91,14 +113,13 @@ export const mcpHelp = karin.command(/^#?mcp(?:\s*(?:帮助|help))?$/i, async (e
         version: dir.version,
         generatedAt: formatDateTime(new Date()),
         mcpUrl,
-        apiKeyStatus,
-        apiKeyMasked,
+        authText: 'No Key (IP allowlist optional)',
         configPath,
         mcpServerPath,
       },
       setViewport: {
-        width: 900,
-        height: 860,
+        width: 1920,
+        height: 1080,
         deviceScaleFactor: 2,
       },
       pageGotoParams: {
@@ -110,7 +131,7 @@ export const mcpHelp = karin.command(/^#?mcp(?:\s*(?:帮助|help))?$/i, async (e
     return true
   } catch (error: any) {
     logger.error(error)
-    await e.reply(buildTextHelp({ mcpUrl, apiKey, configPath, mcpServerPath }))
+    await e.reply(buildTextHelp({ mcpUrl, configPath, mcpServerPath }))
     return true
   }
 }, {

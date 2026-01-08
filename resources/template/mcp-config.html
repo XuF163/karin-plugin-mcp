@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{{name}} MCP 帮助</title>
+  <title>{{name}} MCP 配置</title>
   <style>
     :root {
       --bg0: #0b1020;
@@ -17,6 +17,7 @@
       --accent: #38bdf8;
       --good: #34d399;
       --warn: #fbbf24;
+      --bad: #fb7185;
       --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
       --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
     }
@@ -35,7 +36,7 @@
       background:
         radial-gradient(1000px 600px at 18% 8%, rgba(56, 189, 248, 0.22), transparent 60%),
         radial-gradient(900px 700px at 88% 10%, rgba(52, 211, 153, 0.16), transparent 55%),
-        radial-gradient(1200px 800px at 60% 92%, rgba(251, 191, 36, 0.14), transparent 60%),
+        radial-gradient(1200px 800px at 60% 92%, rgba(251, 113, 133, 0.14), transparent 60%),
         linear-gradient(180deg, var(--bg0), var(--bg1));
       position: relative;
       overflow: hidden;
@@ -99,7 +100,7 @@
     .grid {
       flex: 1 1 auto;
       display: grid;
-      grid-template-columns: 1.05fr 0.95fr;
+      grid-template-columns: 1.12fr 0.88fr;
       gap: 22px;
       min-height: 0;
     }
@@ -175,12 +176,19 @@
 
     .ok {
       color: var(--good);
-      font-weight: 900;
+      font-weight: 800;
     }
 
     .warn {
       color: var(--warn);
-      font-weight: 900;
+      font-weight: 800;
+    }
+
+    .commands {
+      padding-top: 12px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
     }
 
     .cmd {
@@ -188,11 +196,6 @@
       background: rgba(0, 0, 0, 0.16);
       border-radius: 16px;
       padding: 14px 14px;
-      margin-top: 12px;
-    }
-
-    .cmd:first-of-type {
-      margin-top: 0;
     }
 
     .cmd-title {
@@ -226,7 +229,7 @@
   <div class="wrap">
     <div class="header">
       <div>
-        <div class="title">MCP 插件 · 帮助</div>
+        <div class="title">MCP 插件 · 配置中心</div>
         <div class="subtitle">
           插件：<span class="mono">{{name}}</span> <span class="badge mono">v{{version}}</span>
           <span style="margin: 0 10px; opacity: .55;">·</span>
@@ -234,33 +237,54 @@
         </div>
       </div>
       <div class="meta">
-        <div>简洁指令卡（图片 ≥1920×1080）</div>
         <div>HTTP Bridge：<span class="mono">{{mcpUrl}}</span></div>
+        <div>配置文件：<span class="mono">{{configPath}}</span></div>
       </div>
     </div>
 
     <div class="grid">
       <div class="card">
         <div class="card-title">
-          <div>快速指令</div>
-          <div class="pill">面向真人交互：全部图片回显</div>
+          <div>当前配置</div>
+          <div class="pill">仅支持 Web UI 修改</div>
         </div>
         <div class="rows">
-          <div class="cmd">
-            <div class="cmd-title">#mcp 帮助</div>
-            <div class="cmd-desc">查看本帮助卡片。</div>
+          <div class="row">
+            <div class="key">挂载路径</div>
+            <div class="val mono">{{mcpPath}}</div>
           </div>
+          <div class="row">
+            <div class="key">地址（URL）</div>
+            <div class="val mono">{{mcpUrl}}</div>
+          </div>
+          <div class="row">
+            <div class="key">安全模式</div>
+            <div class="val">{{authText}}</div>
+          </div>
+          <div class="row">
+            <div class="key">IP 白名单</div>
+            <div class="val">{{ipAllowlistText}}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <div>可用命令</div>
+          <div class="pill">全部回显为图片（≥1920×1080）</div>
+        </div>
+        <div class="commands">
           <div class="cmd">
             <div class="cmd-title">#mcp 配置</div>
-            <div class="cmd-desc">查看当前配置摘要（修改配置请前往 Web UI）。</div>
+            <div class="cmd-desc">查看配置中心（本页面）。</div>
           </div>
           <div class="cmd">
             <div class="cmd-title">#mcp 状态</div>
             <div class="cmd-desc">查看运行状态（HTTP / MCP Server / Adapter / Buffers / Bots）。</div>
           </div>
           <div class="cmd">
-            <div class="cmd-title">#mcp 导出配置</div>
-            <div class="cmd-desc">导出 MCP Host 配置片段（文本 JSON，可复制到你的 mcpServers 配置）。</div>
+            <div class="cmd-title">#mcp 帮助</div>
+            <div class="cmd-desc">查看帮助卡片（图片）。</div>
           </div>
           <div class="cmd">
             <div class="cmd-title">配置修改（Web UI）</div>
@@ -268,55 +292,13 @@
           </div>
         </div>
       </div>
-
-      <div class="card">
-        <div class="card-title">
-          <div>HTTP Bridge / 鉴权 / Server</div>
-          <div class="pill">MCP(stdio) → HTTP Bridge</div>
-        </div>
-        <div class="rows">
-          <div class="row">
-            <div class="key">地址</div>
-            <div class="val mono">{{mcpUrl}}</div>
-          </div>
-          <div class="row">
-            <div class="key">健康检查</div>
-            <div class="val mono">GET {{mcpUrl}}/health</div>
-          </div>
-          <div class="row">
-            <div class="key">渲染产物</div>
-            <div class="val mono">GET {{mcpUrl}}/files/:filename</div>
-          </div>
-          <div class="row">
-            <div class="key">Actions</div>
-            <div class="val mono">POST {{mcpUrl}}/api/bot.status | mock.incoming.message | mock.status | mock.history | render.screenshot | meta.actions | test.scenarios.list | test.scenario.run | test.scenarios.runAll | test.records.list | test.records.tail | test.trace.get</div>
-          </div>
-          <div class="row">
-            <div class="key">安全模式</div>
-            <div class="val">{{authText}}</div>
-          </div>
-          <div class="row">
-            <div class="key">配置文件</div>
-            <div class="val mono">{{configPath}}</div>
-          </div>
-          <div class="row">
-            <div class="key">启动文件</div>
-            <div class="val mono">{{mcpServerPath}}</div>
-          </div>
-          <div class="row">
-            <div class="key">推荐 args</div>
-            <div class="val mono">--karin-url {{mcpUrl}} --log-level error</div>
-          </div>
-        </div>
-      </div>
     </div>
-  </div>
 
-  <div class="footer">
-    <div>更多接口说明：docs/API.md</div>
-    <div class="mono">#mcp 帮助 / #mcp 配置 / #mcp 状态 / #mcp 导出配置</div>
+    <div class="footer">
+      <div>更多接口说明：docs/API.md</div>
+      <div class="mono">#mcp 帮助 / #mcp 配置 / #mcp 状态</div>
+    </div>
   </div>
 </body>
 
 </html>
-
