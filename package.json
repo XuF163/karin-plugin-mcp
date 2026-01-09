@@ -1,6 +1,6 @@
 {
   "name": "karin-plugin-mcp",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "author": "429",
   "type": "module",
   "description": "Karin MCP bridge plugin (stdio MCP server + /MCP HTTP bridge)",
